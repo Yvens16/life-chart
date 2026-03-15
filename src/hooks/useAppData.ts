@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { AppData, Goal, Entry } from '../types'
 import { fetchData, saveData } from '../api'
 import { getErrorMessage } from '../utils/errors'
@@ -129,19 +129,26 @@ export function useAppData() {
     }
   }
 
-  return {
-    data,
-    loading,
-    error,
-    mutate,
-    updateGoals,
-    updateCategories,
-    addGoal,
-    updateGoal,
-    deleteGoal,
-    addEntry,
-    updateEntry,
-    deleteEntry,
-    refetch,
-  }
+  // Memoize the returned object so the context value reference is stable
+  // when data/loading/error haven't changed — prevents all consumers from
+  // re-rendering on every unrelated render of AppDataProvider.
+  return useMemo(
+    () => ({
+      data,
+      loading,
+      error,
+      mutate,
+      updateGoals,
+      updateCategories,
+      addGoal,
+      updateGoal,
+      deleteGoal,
+      addEntry,
+      updateEntry,
+      deleteEntry,
+      refetch,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, loading, error],
+  )
 }

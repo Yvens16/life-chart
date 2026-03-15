@@ -1,5 +1,5 @@
 // src/components/Dashboard.tsx
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import { useAppData } from '../context/AppDataContext'
 import { calculateProgress } from '../utils/progress'
@@ -17,6 +17,26 @@ export default function Dashboard() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
 
+  // Group goals by category — memoized on data so re-renders from modal
+  // open/close don't recompute the O(categories × goals) grouping.
+  const goalsByCategory = useMemo(() => {
+    const gs = data?.goals ?? []
+    const cats = data?.categories ?? []
+    const result: Record<string, typeof gs> = {}
+    gs.forEach(goal => {
+      if (!result[goal.category]) result[goal.category] = []
+      result[goal.category]!.push(goal)
+    })
+    // Ensure all categories appear even if empty
+    cats.forEach(cat => {
+      if (!result[cat]) result[cat] = []
+    })
+    return result
+  }, [data])
+
+  const goals = data?.goals ?? []
+  const categories = data?.categories ?? []
+
   if (loading) {
     return <div className="dashboard-loading">Loading your goals...</div>
   }
@@ -29,25 +49,6 @@ export default function Dashboard() {
       </div>
     )
   }
-
-  const goals = data?.goals ?? []
-  const categories = data?.categories ?? []
-
-  // Group goals by category
-  const goalsByCategory: Record<string, typeof goals> = {}
-  goals.forEach(goal => {
-    if (!goalsByCategory[goal.category]) {
-      goalsByCategory[goal.category] = []
-    }
-    goalsByCategory[goal.category].push(goal)
-  })
-
-  // Ensure all categories appear even if empty (for master list)
-  categories.forEach(cat => {
-    if (!goalsByCategory[cat]) {
-      goalsByCategory[cat] = []
-    }
-  })
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories(prev => {
@@ -138,7 +139,7 @@ export default function Dashboard() {
                   ) : (
                     <div className="category-empty">
                       <p>No goals in this category yet.</p>
-                      <button onClick={() => console.log('TODO: create goal in this category')}>
+                      <button onClick={handleCreateGoalClick}>
                         Add a goal to {category}
                       </button>
                     </div>
@@ -149,12 +150,12 @@ export default function Dashboard() {
           )
         })}
       </div>
-      <CreateGoalModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
-      <CreateGoalModal
-        open={editModalOpen}
-        onClose={handleCloseEditModal}
-        goal={editingGoal || undefined}
-      />
+      {createModalOpen && (
+        <CreateGoalModal open onClose={() => setCreateModalOpen(false)} />
+      )}
+      {editModalOpen && editingGoal && (
+        <CreateGoalModal open onClose={handleCloseEditModal} goal={editingGoal} />
+      )}
     </div>
   )
 }

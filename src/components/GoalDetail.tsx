@@ -1,5 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Navigate } from 'react-router'
+
+/** Parse a YYYY-MM-DD string as local midnight (not UTC midnight). */
+function parseLocalDate(dateStr: string): Date {
+  return new Date(dateStr + 'T00:00:00')
+}
 import {
   LineChart,
   Line,
@@ -24,6 +29,7 @@ export default function GoalDetail() {
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [editDate, setEditDate] = useState('')
+  const [editError, setEditError] = useState<string | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
 
   if (loading) {
@@ -88,21 +94,39 @@ export default function GoalDetail() {
     setEditingEntryId(entryId)
     setEditValue(entry.value.toString())
     setEditDate(entry.date)
+    setEditError(null)
   }
 
   const cancelEdit = () => {
     setEditingEntryId(null)
     setEditValue('')
     setEditDate('')
+    setEditError(null)
   }
 
   const saveEdit = async () => {
     if (!editingEntryId) return
+
+    // Reject NaN, Infinity, -Infinity — all serialize to null in JSON
     const value = parseFloat(editValue)
-    if (isNaN(value)) {
-      alert('Please enter a valid number')
+    if (!Number.isFinite(value)) {
+      setEditError('Please enter a valid finite number')
       return
     }
+
+    // Validate date format (browser <input type="date"> returns YYYY-MM-DD or empty)
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+    if (!dateRegex.test(editDate)) {
+      setEditError('Date is required (YYYY-MM-DD)')
+      return
+    }
+    const parsedDate = parseLocalDate(editDate)
+    if (isNaN(parsedDate.getTime())) {
+      setEditError('Invalid date — please enter a real calendar date')
+      return
+    }
+
+    setEditError(null)
     try {
       await updateEntry(goal.id, editingEntryId, { date: editDate, value })
       setEditingEntryId(null)
@@ -198,13 +222,14 @@ export default function GoalDetail() {
                       onChange={e => setEditValue(e.target.value)}
                       placeholder="Value"
                     />
+                    {editError && <span className="entry-edit-error">{editError}</span>}
                     <button onClick={saveEdit}>Save</button>
                     <button onClick={cancelEdit}>Cancel</button>
                   </div>
                 ) : (
                   <>
                     <div className="entry-info">
-                      <span className="entry-date">{new Date(entry.date).toLocaleDateString()}</span>
+                      <span className="entry-date">{parseLocalDate(entry.date).toLocaleDateString()}</span>
                       <span className="entry-value">{entry.value} {goal.unit}</span>
                     </div>
                     <div className="entry-actions">
@@ -218,11 +243,13 @@ export default function GoalDetail() {
           </ul>
         )}
       </div>
-      <CreateGoalModal
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        goal={goal}
-      />
+      {editModalOpen && (
+        <CreateGoalModal
+          open
+          onClose={() => setEditModalOpen(false)}
+          goal={goal}
+        />
+      )}
     </div>
   )
 }

@@ -6,7 +6,9 @@ import type { Entry } from '../types'
  * Week 1 starts on January 1, each week is 7 days.
  */
 function getSimpleWeek(dateStr: string): string {
-  const date = new Date(dateStr)
+  // Append T00:00:00 so YYYY-MM-DD is parsed as local midnight, not UTC midnight.
+  // Without this, users west of UTC see the wrong day (and wrong week for Mondays).
+  const date = new Date(dateStr + 'T00:00:00')
   const year = date.getFullYear()
   const jan1 = new Date(year, 0, 1)
   const days = Math.floor((date.getTime() - jan1.getTime()) / (24 * 60 * 60 * 1000))
