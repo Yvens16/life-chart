@@ -231,14 +231,14 @@ function calculateProgress(goal: Goal): number {
 Set up routing, data layer, and project structure.
 
 **Tasks:**
-- [ ] Install dependencies: `npm install react-router recharts`
-- [ ] Create `src/types.ts` with `Goal`, `Entry`, `AppData` type definitions
-- [ ] Add Vite API plugin in `vite.config.ts` (`configureServer` with `GET /api/data` and `POST /api/data`)
-- [ ] Create seed `data.json` with empty initial structure `{ goals: [], categories: [] }`
-- [ ] Create `src/api.ts` with `fetchData()` and `saveData()` helper functions
-- [ ] Create `src/hooks/useAppData.ts` — custom hook for loading and mutating app data
-- [ ] Update `src/main.tsx` — wrap App in `BrowserRouter`
-- [ ] Update `src/App.tsx` — set up `Routes` with `/` and `/goal/:id`, add basic layout shell
+- [x] Install dependencies: `npm install react-router recharts`
+- [x] Create `src/types.ts` with `Goal`, `Entry`, `AppData` type definitions
+- [x] Add Vite API plugin in `vite.config.ts` (`configureServer` with `GET /api/data` and `POST /api/data`)
+- [x] Create seed `data.json` with empty initial structure `{ goals: [], categories: [] }`
+- [x] Create `src/api.ts` with `fetchData()` and `saveData()` helper functions
+- [x] Create `src/hooks/useAppData.ts` — custom hook for loading and mutating app data
+- [x] Update `src/main.tsx` — wrap App in `BrowserRouter`
+- [x] Update `src/App.tsx` — set up `Routes` with `/` and `/goal/:id`, add basic layout shell
 
 **Success criteria:** App loads, routes work, API reads/writes `data.json` correctly.
 
@@ -247,14 +247,14 @@ Set up routing, data layer, and project structure.
 Build the main dashboard with categorized goal cards.
 
 **Tasks:**
-- [ ] Create `src/components/Dashboard.tsx` — fetches data, groups goals by category, renders collapsible sections
-- [ ] Create `src/components/GoalCard.tsx` — small line chart card with goal name, progress percentage, and sparkline chart
-- [ ] Create `src/components/EmptyState.tsx` — reusable empty state with message and optional CTA
-- [ ] Style dashboard grid layout (`Dashboard.css`) — responsive card grid, collapsible category headers
-- [ ] Style goal cards (`GoalCard.css`) — card styling, hover state, click target
-- [ ] Implement category collapse/expand with local state
-- [ ] Handle empty dashboard state (0 goals) with "Create your first goal" CTA
-- [ ] Wire up card click to navigate to `/goal/:id`
+- [x] Create `src/components/Dashboard.tsx` — fetches data, groups goals by category, renders collapsible sections
+- [x] Create `src/components/GoalCard.tsx` — small line chart card with goal name, progress percentage, and sparkline chart
+- [x] Create `src/components/EmptyState.tsx` — reusable empty state with message and optional CTA
+- [x] Style dashboard grid layout (`Dashboard.css`) — responsive card grid, collapsible category headers
+- [x] Style goal cards (`GoalCard.css`) — card styling, hover state, click target
+- [x] Implement category collapse/expand with local state
+- [x] Handle empty dashboard state (0 goals) with "Create your first goal" CTA
+- [x] Wire up card click to navigate to `/goal/:id`
 
 **Success criteria:** Dashboard renders goal cards in category sections, clicking navigates to detail, empty state shows for new users.
 
