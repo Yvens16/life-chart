@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Goal } from '../types'
 import { useAppData } from '../context/AppDataContext'
+import { useToast } from '../context/ToastContext'
 import { getErrorMessage } from '../utils/errors'
 import './CreateGoalModal.css'
 
@@ -12,6 +13,7 @@ interface CreateGoalModalProps {
 
 export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModalProps) {
   const { data, mutate } = useAppData()
+  const { showError } = useToast()
   const categories = data?.categories ?? []
   const isEdit = !!goal
 
@@ -130,7 +132,7 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
 
       onClose()
     } catch (err) {
-      alert(`Failed to save goal: ${getErrorMessage(err)}`)
+      showError(`Failed to save goal: ${getErrorMessage(err)}`)
     } finally {
       setSubmitting(false)
     }

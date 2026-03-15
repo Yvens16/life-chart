@@ -1,7 +1,7 @@
 ---
 title: "feat: Goal Progress Tracker with Line Charts"
 type: feat
-status: active
+status: completed
 date: 2026-03-14
 origin: docs/brainstorms/2026-03-14-life-chart-goal-tracker-brainstorm.md
 ---
@@ -293,13 +293,13 @@ Add create, edit, and delete operations for goals.
 Add the floating action button and entry logging.
 
 **Tasks:**
-- [ ] Create `src/components/QuickAddModal.tsx` — FAB + modal with goal picker, value input, optional date picker
-- [ ] Position FAB as fixed bottom-right element in App layout
-- [ ] Implement goal picker dropdown (searchable if 10+ goals)
-- [ ] Default date to today, validate per rules
-- [ ] Handle 0 goals state in modal ("Create a goal first")
-- [ ] Entry edit/delete actions on GoalDetail entry list
-- [ ] Style FAB and modal (`QuickAddModal.css`)
+- [x] Create `src/components/QuickAddModal.tsx` — FAB + modal with goal picker, value input, optional date picker
+- [x] Position FAB as fixed bottom-right element in App layout
+- [x] Implement goal picker dropdown (searchable if 10+ goals)
+- [x] Default date to today, validate per rules
+- [x] Handle 0 goals state in modal ("Create a goal first")
+- [x] Entry edit/delete actions on GoalDetail entry list
+- [x] Style FAB and modal (`QuickAddModal.css`)
 
 **Success criteria:** FAB always visible, modal opens for quick entry logging, entries appear on charts immediately after save.
 
@@ -308,14 +308,14 @@ Add the floating action button and entry logging.
 Visual refinement and edge case handling.
 
 **Tasks:**
-- [ ] Add progress percentage display on GoalCard
-- [ ] Add completion badge (checkmark) when goal is met
-- [ ] Add color coding: green stroke for progressing, red for regressing
-- [ ] Add loading states for API calls
-- [ ] Add error handling for API failures (toast or inline message)
-- [ ] Responsive layout adjustments for mobile screens
-- [ ] Dark mode support (extend existing CSS variable pattern)
-- [ ] Clean up boilerplate from Vite starter template (remove hero, counter, etc.)
+- [x] Add progress percentage display on GoalCard
+- [x] Add completion badge (checkmark) when goal is met
+- [x] Add color coding: green stroke for progressing, red for regressing
+- [x] Add loading states for API calls
+- [x] Add error handling for API failures (toast or inline message)
+- [x] Responsive layout adjustments for mobile screens
+- [x] Dark mode support (extend existing CSS variable pattern)
+- [x] Clean up boilerplate from Vite starter template (remove hero, counter, etc.)
 
 **Success criteria:** App feels polished, handles edge cases gracefully, works on mobile.
 

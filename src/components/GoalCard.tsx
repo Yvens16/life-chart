@@ -65,7 +65,9 @@ export default function GoalCard({ goal, progress, onClick, onEdit, onDelete }: 
       <div className="goal-card-header">
         <h3 className="goal-card-title">{goal.name}</h3>
         <div className="goal-card-header-right">
-          <div className="goal-card-progress">{progress.toFixed(0)}%</div>
+          <div className={`goal-card-progress${progress >= 100 ? ' goal-card-progress--complete' : ''}`}>
+            {progress >= 100 ? '✓ Done' : `${progress.toFixed(0)}%`}
+          </div>
           {(onEdit || onDelete) && (
             <div className="goal-card-actions" onClick={e => e.stopPropagation()}>
               {onEdit && (

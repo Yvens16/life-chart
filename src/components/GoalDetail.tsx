@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { useAppData } from '../context/AppDataContext'
+import { useToast } from '../context/ToastContext'
 import { calculateProgress, isGoalProgressing } from '../utils/progress'
 import { groupEntriesByWeek, formatWeekLabel } from '../utils/weekAggregation'
 import { getErrorMessage } from '../utils/errors'
@@ -26,6 +27,7 @@ export default function GoalDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data, loading, error, deleteEntry, updateEntry, deleteGoal } = useAppData()
+  const { showError } = useToast()
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [editDate, setEditDate] = useState('')
@@ -33,7 +35,12 @@ export default function GoalDetail() {
   const [editModalOpen, setEditModalOpen] = useState(false)
 
   if (loading) {
-    return <div className="goal-detail-loading">Loading goal details...</div>
+    return (
+      <div className="goal-detail-loading">
+        <div className="spinner" />
+        <span>Loading goal details...</span>
+      </div>
+    )
   }
 
   if (error) {
@@ -71,7 +78,7 @@ export default function GoalDetail() {
   const handleDeleteEntry = (entryId: string) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
       deleteEntry(goal.id, entryId).catch(err => {
-        alert(`Failed to delete entry: ${getErrorMessage(err)}`)
+        showError(`Failed to delete entry: ${getErrorMessage(err)}`)
       })
     }
   }
@@ -84,7 +91,7 @@ export default function GoalDetail() {
       await deleteGoal(goal.id)
       navigate('/')
     } catch (err) {
-      alert(`Failed to delete goal: ${getErrorMessage(err)}`)
+      showError(`Failed to delete goal: ${getErrorMessage(err)}`)
     }
   }
 
@@ -131,7 +138,7 @@ export default function GoalDetail() {
       await updateEntry(goal.id, editingEntryId, { date: editDate, value })
       setEditingEntryId(null)
     } catch (err) {
-      alert(`Failed to update entry: ${getErrorMessage(err)}`)
+      showError(`Failed to update entry: ${getErrorMessage(err)}`)
     }
   }
 

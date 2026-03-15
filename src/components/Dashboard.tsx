@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import { useAppData } from '../context/AppDataContext'
+import { useToast } from '../context/ToastContext'
 import { calculateProgress } from '../utils/progress'
 import type { Goal } from '../types'
 import GoalCard from './GoalCard'
@@ -11,6 +12,7 @@ import CreateGoalModal from './CreateGoalModal'
 
 export default function Dashboard() {
   const { data, loading, error, deleteGoal } = useAppData()
+  const { showError } = useToast()
   const navigate = useNavigate()
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const [createModalOpen, setCreateModalOpen] = useState(false)
@@ -38,7 +40,12 @@ export default function Dashboard() {
   const categories = data?.categories ?? []
 
   if (loading) {
-    return <div className="dashboard-loading">Loading your goals...</div>
+    return (
+      <div className="dashboard-loading">
+        <div className="spinner" />
+        <span>Loading your goals...</span>
+      </div>
+    )
   }
 
   if (error) {
@@ -67,7 +74,7 @@ export default function Dashboard() {
       try {
         await deleteGoal(goalId)
       } catch (err) {
-        alert(`Failed to delete goal: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        showError(`Failed to delete goal: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     }
   }

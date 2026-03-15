@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Entry } from '../types'
 import { useAppData } from '../context/AppDataContext'
+import { useToast } from '../context/ToastContext'
 import { getErrorMessage } from '../utils/errors'
 import './QuickAddModal.css'
 
@@ -11,11 +12,8 @@ interface QuickAddModalProps {
 
 export default function QuickAddModal({ open, onClose }: QuickAddModalProps) {
   const { data, addEntry } = useAppData()
+  const { showError } = useToast()
   const goals = data?.goals ?? []
-  const filteredGoals = goals.filter(goal =>
-    goal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    goal.category.toLowerCase().includes(searchQuery.toLowerCase())
-  )
 
   const [selectedGoalId, setSelectedGoalId] = useState('')
   const [value, setValue] = useState('')
@@ -24,13 +22,19 @@ export default function QuickAddModal({ open, onClose }: QuickAddModalProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
 
+  const filteredGoals = goals.filter(goal =>
+    goal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    goal.category.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
   // Initialize date to today (YYYY-MM-DD format)
   useEffect(() => {
     if (open) {
       const today = new Date().toISOString().split('T')[0]
-      setDate(today)
+      setDate(today ?? '')
       setSelectedGoalId('')
       setValue('')
+      setSearchQuery('')
       setErrors({})
     }
   }, [open])
@@ -56,7 +60,8 @@ export default function QuickAddModal({ open, onClose }: QuickAddModalProps) {
     if (!date) {
       newErrors.date = 'Date is required'
     } else {
-      const selectedDate = new Date(date)
+      // Parse as local midnight (not UTC) to avoid off-by-one in UTC-offset timezones
+      const selectedDate = new Date(date + 'T00:00:00')
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       if (selectedDate > today) {
@@ -88,7 +93,7 @@ export default function QuickAddModal({ open, onClose }: QuickAddModalProps) {
       await addEntry(selectedGoalId, newEntry)
       onClose()
     } catch (err) {
-      alert(`Failed to add entry: ${getErrorMessage(err)}`)
+      showError(`Failed to add entry: ${getErrorMessage(err)}`)
     } finally {
       setSubmitting(false)
     }
