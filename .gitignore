@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Local data file — contains personal goal data, should not be committed
+# Use data.seed.json for example/template data
+data.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

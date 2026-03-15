@@ -1,6 +1,5 @@
-// src/hooks/useAppData.ts
 import { useState, useEffect } from 'react'
-import type { AppData } from '../types'
+import type { AppData, Goal, Entry } from '../types'
 import { fetchData, saveData } from '../api'
 
 export function useAppData() {
@@ -37,7 +36,7 @@ export function useAppData() {
     }
   }, [])
 
-  // Mutate data: update local state and persist to server
+  // Mutate data: persist to server then update local state
   async function mutate(newData: AppData) {
     try {
       await saveData(newData)
@@ -49,73 +48,84 @@ export function useAppData() {
     }
   }
 
-  // Helper to update goals (common operation)
+  // Helpers guard against calling before data is loaded
+  function requireData(): AppData {
+    if (!data) throw new Error('Data not loaded yet')
+    return data
+  }
+
   async function updateGoals(goals: AppData['goals']) {
-    if (!data) return
-    await mutate({ ...data, goals })
+    const current = requireData()
+    await mutate({ ...current, goals })
   }
 
-  // Helper to update categories
   async function updateCategories(categories: AppData['categories']) {
-    if (!data) return
-    await mutate({ ...data, categories })
+    const current = requireData()
+    await mutate({ ...current, categories })
   }
 
-  // Helper to add a new goal
-  async function addGoal(goal: AppData['goals'][number]) {
-    if (!data) return
-    await mutate({ ...data, goals: [...data.goals, goal] })
+  async function addGoal(goal: Goal) {
+    const current = requireData()
+    await mutate({ ...current, goals: [...current.goals, goal] })
   }
 
-  // Helper to update a goal by ID
-  async function updateGoal(id: string, updates: Partial<AppData['goals'][number]>) {
-    if (!data) return
-    const goals = data.goals.map(goal =>
+  // Only allow updating safe fields — not entries (use addEntry/updateEntry/deleteEntry)
+  async function updateGoal(id: string, updates: Pick<Goal, 'name' | 'category' | 'unit' | 'targetValue'>) {
+    const current = requireData()
+    const goals = current.goals.map(goal =>
       goal.id === id ? { ...goal, ...updates } : goal
     )
-    await mutate({ ...data, goals })
+    await mutate({ ...current, goals })
   }
 
-  // Helper to delete a goal by ID
   async function deleteGoal(id: string) {
-    if (!data) return
-    const goals = data.goals.filter(goal => goal.id !== id)
-    await mutate({ ...data, goals })
+    const current = requireData()
+    const goals = current.goals.filter(goal => goal.id !== id)
+    await mutate({ ...current, goals })
   }
 
-  // Helper to add an entry to a goal
-  async function addEntry(goalId: string, entry: AppData['goals'][number]['entries'][number]) {
-    if (!data) return
-    const goals = data.goals.map(goal =>
+  async function addEntry(goalId: string, entry: Entry) {
+    const current = requireData()
+    const goals = current.goals.map(goal =>
       goal.id === goalId
         ? { ...goal, entries: [...goal.entries, entry] }
         : goal
     )
-    await mutate({ ...data, goals })
+    await mutate({ ...current, goals })
   }
 
-  // Helper to update an entry
-  async function updateEntry(goalId: string, entryId: string, updates: Partial<AppData['goals'][number]['entries'][number]>) {
-    if (!data) return
-    const goals = data.goals.map(goal => {
+  async function updateEntry(goalId: string, entryId: string, updates: Pick<Entry, 'date' | 'value'>) {
+    const current = requireData()
+    const goals = current.goals.map(goal => {
       if (goal.id !== goalId) return goal
       const entries = goal.entries.map(entry =>
         entry.id === entryId ? { ...entry, ...updates } : entry
       )
       return { ...goal, entries }
     })
-    await mutate({ ...data, goals })
+    await mutate({ ...current, goals })
   }
 
-  // Helper to delete an entry
   async function deleteEntry(goalId: string, entryId: string) {
-    if (!data) return
-    const goals = data.goals.map(goal => {
+    const current = requireData()
+    const goals = current.goals.map(goal => {
       if (goal.id !== goalId) return goal
-      const entries = goal.entries.filter(entry => entry.id !== entryId)
-      return { ...goal, entries }
+      return { ...goal, entries: goal.entries.filter(e => e.id !== entryId) }
     })
-    await mutate({ ...data, goals })
+    await mutate({ ...current, goals })
+  }
+
+  async function refetch() {
+    setLoading(true)
+    try {
+      const result = await fetchData()
+      setData(result)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return {
@@ -131,12 +141,6 @@ export function useAppData() {
     addEntry,
     updateEntry,
     deleteEntry,
-    refetch: () => {
-      setLoading(true)
-      fetchData()
-        .then(setData)
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false))
-    }
+    refetch,
   }
 }

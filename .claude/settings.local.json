@@ -5,7 +5,8 @@
       "mcp__plugin_compound-engineering_context7__query-docs",
       "WebSearch",
       "Bash(ls docs/plans/2026-03-14-*-plan.md)",
-      "Bash(open /Users/yvensbelaston/dev/life-chart/docs/plans/2026-03-14-001-feat-goal-progress-tracker-plan.md)"
+      "Bash(open /Users/yvensbelaston/dev/life-chart/docs/plans/2026-03-14-001-feat-goal-progress-tracker-plan.md)",
+      "Bash(npm run:*)"
     ]
   }
 }

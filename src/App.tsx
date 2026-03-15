@@ -1,18 +1,7 @@
 import { Routes, Route } from 'react-router'
 import './App.css'
-
-// Placeholder components for Phase 1
-// Will be replaced with actual implementations in later phases
-function Dashboard() {
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>Goal progress tracker dashboard will appear here.</p>
-      <p>Phase 2 will implement the dashboard view.</p>
-    </div>
-  )
-}
-
+import Dashboard from './components/Dashboard'
+// GoalDetail placeholder remains until Phase 3
 function GoalDetail() {
   return (
     <div>
