@@ -280,8 +280,8 @@ Add create, edit, and delete operations for goals.
 **Tasks:**
 - [x] Create `src/components/CreateGoalModal.tsx` — modal form with all goal fields, category dropdown with "New category" inline creation
 - [x] Add "Create Goal" button to dashboard header
-- [ ] Add "Edit Goal" button to GoalDetail page (reuses CreateGoalModal in edit mode)
-- [ ] Add "Delete Goal" button to GoalDetail with confirmation dialog
+- [x] Add "Edit Goal" button to GoalDetail page (reuses CreateGoalModal in edit mode)
+- [x] Add "Delete Goal" button to GoalDetail with confirmation dialog
 - [x] Implement form validation per validation rules table
 - [x] Wire all mutations through `useAppData` hook → `POST /api/data`
 - [x] Style modals (`CreateGoalModal.css`)
