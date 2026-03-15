@@ -6,11 +6,13 @@ import { calculateProgress } from '../utils/progress'
 import GoalCard from './GoalCard'
 import EmptyState from './EmptyState'
 import './Dashboard.css'
+import CreateGoalModal from './CreateGoalModal'
 
 export default function Dashboard() {
   const { data, loading, error } = useAppData()
   const navigate = useNavigate()
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   if (loading) {
     return <div className="dashboard-loading">Loading your goals...</div>
@@ -75,7 +77,7 @@ export default function Dashboard() {
       <header className="dashboard-header">
         <h1>Goal Progress Dashboard</h1>
         <p>Track your progress across {goals.length} goal{goals.length !== 1 ? 's' : ''}</p>
-        <button className="dashboard-create-goal-btn" onClick={() => console.log('TODO: open create goal modal')}>
+        <button className="dashboard-create-goal-btn" onClick={() => setCreateModalOpen(true)}>
           + Create Goal
         </button>
       </header>
@@ -120,6 +122,7 @@ export default function Dashboard() {
           )
         })}
       </div>
+      <CreateGoalModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
     </div>
   )
 }

@@ -263,13 +263,13 @@ Build the main dashboard with categorized goal cards.
 Build the detail page with full chart and entry management.
 
 **Tasks:**
-- [ ] Create `src/components/GoalDetail.tsx` — full-size week-by-week line chart, back button, goal info header
-- [ ] Implement week aggregation logic (group entries by ISO week, use latest value per week)
-- [ ] Add `ReferenceLine` for target value and start value
-- [ ] Add entry list below chart (date, value, edit/delete actions)
-- [ ] Handle empty entries state ("Log your first entry")
-- [ ] Handle invalid goal ID (redirect to dashboard)
-- [ ] Style detail page (`GoalDetail.css`) — chart container, entry list, header with back nav
+- [x] Create `src/components/GoalDetail.tsx` — full-size week-by-week line chart, back button, goal info header
+- [x] Implement week aggregation logic (group entries by ISO week, use latest value per week)
+- [x] Add `ReferenceLine` for target value and start value
+- [x] Add entry list below chart (date, value, edit/delete actions)
+- [x] Handle empty entries state ("Log your first entry")
+- [x] Handle invalid goal ID (redirect to dashboard)
+- [x] Style detail page (`GoalDetail.css`) — chart container, entry list, header with back nav
 
 **Success criteria:** Detail page shows full chart with weekly data, target line, entry list with management actions.
 
@@ -278,13 +278,13 @@ Build the detail page with full chart and entry management.
 Add create, edit, and delete operations for goals.
 
 **Tasks:**
-- [ ] Create `src/components/CreateGoalModal.tsx` — modal form with all goal fields, category dropdown with "New category" inline creation
-- [ ] Add "Create Goal" button to dashboard header
+- [x] Create `src/components/CreateGoalModal.tsx` — modal form with all goal fields, category dropdown with "New category" inline creation
+- [x] Add "Create Goal" button to dashboard header
 - [ ] Add "Edit Goal" button to GoalDetail page (reuses CreateGoalModal in edit mode)
 - [ ] Add "Delete Goal" button to GoalDetail with confirmation dialog
-- [ ] Implement form validation per validation rules table
-- [ ] Wire all mutations through `useAppData` hook → `POST /api/data`
-- [ ] Style modals (`CreateGoalModal.css`)
+- [x] Implement form validation per validation rules table
+- [x] Wire all mutations through `useAppData` hook → `POST /api/data`
+- [x] Style modals (`CreateGoalModal.css`)
 
 **Success criteria:** Full CRUD lifecycle for goals — create from dashboard, edit/delete from detail page, all changes persist to data.json.
 
