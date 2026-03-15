@@ -14,15 +14,17 @@ import { useAppData } from '../context/AppDataContext'
 import { calculateProgress, isGoalProgressing } from '../utils/progress'
 import { groupEntriesByWeek, formatWeekLabel } from '../utils/weekAggregation'
 import { getErrorMessage } from '../utils/errors'
+import CreateGoalModal from './CreateGoalModal'
 import './GoalDetail.css'
 
 export default function GoalDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data, loading, error, deleteEntry, updateEntry } = useAppData()
+  const { data, loading, error, deleteEntry, updateEntry, deleteGoal } = useAppData()
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [editDate, setEditDate] = useState('')
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   if (loading) {
     return <div className="goal-detail-loading">Loading goal details...</div>
@@ -68,6 +70,18 @@ export default function GoalDetail() {
     }
   }
 
+  const handleDeleteGoal = async () => {
+    if (!window.confirm('Are you sure you want to delete this goal? This will also delete all its entries.')) {
+      return
+    }
+    try {
+      await deleteGoal(goal.id)
+      navigate('/')
+    } catch (err) {
+      alert(`Failed to delete goal: ${getErrorMessage(err)}`)
+    }
+  }
+
   const startEditEntry = (entryId: string) => {
     const entry = goal.entries.find(e => e.id === entryId)
     if (!entry) return
@@ -108,6 +122,10 @@ export default function GoalDetail() {
           <span className="goal-detail-category">{goal.category}</span>
           <span className="goal-detail-progress">{progress.toFixed(0)}% progress</span>
           <span className="goal-detail-unit">{goal.unit}</span>
+        </div>
+        <div className="goal-actions">
+          <button onClick={() => setEditModalOpen(true)}>Edit</button>
+          <button onClick={handleDeleteGoal}>Delete</button>
         </div>
       </header>
 
@@ -200,6 +218,11 @@ export default function GoalDetail() {
           </ul>
         )}
       </div>
+      <CreateGoalModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        goal={goal}
+      />
     </div>
   )
 }

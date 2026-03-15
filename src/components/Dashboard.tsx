@@ -3,16 +3,19 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useAppData } from '../context/AppDataContext'
 import { calculateProgress } from '../utils/progress'
+import type { Goal } from '../types'
 import GoalCard from './GoalCard'
 import EmptyState from './EmptyState'
 import './Dashboard.css'
 import CreateGoalModal from './CreateGoalModal'
 
 export default function Dashboard() {
-  const { data, loading, error } = useAppData()
+  const { data, loading, error, deleteGoal } = useAppData()
   const navigate = useNavigate()
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
 
   if (loading) {
     return <div className="dashboard-loading">Loading your goals...</div>
@@ -58,16 +61,38 @@ export default function Dashboard() {
     })
   }
 
+  const handleDeleteGoal = async (goalId: string) => {
+    if (window.confirm('Are you sure you want to delete this goal? This action cannot be undone.')) {
+      try {
+        await deleteGoal(goalId)
+      } catch (err) {
+        alert(`Failed to delete goal: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      }
+    }
+  }
+
+  const handleCreateGoalClick = () => {
+    setEditingGoal(null)
+    setCreateModalOpen(true)
+  }
+
+  const handleEditGoal = (goal: Goal) => {
+    setEditingGoal(goal)
+    setEditModalOpen(true)
+  }
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false)
+    setEditingGoal(null)
+  }
+
   // Empty state: no goals at all
   if (goals.length === 0) {
     return (
       <EmptyState
         message="You haven't created any goals yet."
         ctaLabel="Create your first goal"
-        onCtaClick={() => {
-          // TODO: open create goal modal
-          console.log('Open create goal modal')
-        }}
+        onCtaClick={handleCreateGoalClick}
       />
     )
   }
@@ -77,7 +102,7 @@ export default function Dashboard() {
       <header className="dashboard-header">
         <h1>Goal Progress Dashboard</h1>
         <p>Track your progress across {goals.length} goal{goals.length !== 1 ? 's' : ''}</p>
-        <button className="dashboard-create-goal-btn" onClick={() => setCreateModalOpen(true)}>
+        <button className="dashboard-create-goal-btn" onClick={handleCreateGoalClick}>
           + Create Goal
         </button>
       </header>
@@ -105,6 +130,8 @@ export default function Dashboard() {
                           goal={goal}
                           progress={calculateProgress(goal)}
                           onClick={() => navigate(`/goal/${goal.id}`)}
+                          onEdit={() => handleEditGoal(goal)}
+                          onDelete={() => handleDeleteGoal(goal.id)}
                         />
                       ))}
                     </div>
@@ -123,6 +150,11 @@ export default function Dashboard() {
         })}
       </div>
       <CreateGoalModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
+      <CreateGoalModal
+        open={editModalOpen}
+        onClose={handleCloseEditModal}
+        goal={editingGoal || undefined}
+      />
     </div>
   )
 }

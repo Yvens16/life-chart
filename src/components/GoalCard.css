@@ -25,6 +25,13 @@
   margin-bottom: 0.75rem;
 }
 
+.goal-card-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
 .goal-card-title {
   margin: 0;
   font-size: 1.125rem;
@@ -43,6 +50,46 @@
   border-radius: 0.25rem;
   min-width: 2.5rem;
   text-align: center;
+}
+
+.goal-card-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.goal-card-action-btn {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  white-space: nowrap;
+}
+
+.goal-card-action-btn:hover {
+  background-color: var(--surface);
+  border-color: var(--accent-border);
+}
+
+.goal-card-edit-btn {
+  background-color: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.goal-card-delete-btn {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.goal-card-delete-btn:hover {
+  background-color: #fecaca;
+  border-color: #fca5a5;
 }
 
 .goal-card-chart {
