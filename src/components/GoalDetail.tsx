@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router'
+import { useParams, useNavigate, Navigate } from 'react-router'
 import {
   LineChart,
   Line,
@@ -10,9 +10,10 @@ import {
   ReferenceLine,
   ResponsiveContainer,
 } from 'recharts'
-import { useAppData } from '../hooks/useAppData'
+import { useAppData } from '../context/AppDataContext'
 import { calculateProgress, isGoalProgressing } from '../utils/progress'
 import { groupEntriesByWeek, formatWeekLabel } from '../utils/weekAggregation'
+import { getErrorMessage } from '../utils/errors'
 import './GoalDetail.css'
 
 export default function GoalDetail() {
@@ -39,8 +40,7 @@ export default function GoalDetail() {
   const goal = data?.goals.find(g => g.id === id)
   if (!goal) {
     // Redirect to dashboard if goal not found
-    navigate('/')
-    return null
+    return <Navigate to="/" replace />
   }
 
   const progress = calculateProgress(goal)
@@ -63,7 +63,7 @@ export default function GoalDetail() {
   const handleDeleteEntry = (entryId: string) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
       deleteEntry(goal.id, entryId).catch(err => {
-        alert(`Failed to delete entry: ${err.message}`)
+        alert(`Failed to delete entry: ${getErrorMessage(err)}`)
       })
     }
   }
@@ -93,7 +93,7 @@ export default function GoalDetail() {
       await updateEntry(goal.id, editingEntryId, { date: editDate, value })
       setEditingEntryId(null)
     } catch (err) {
-      alert(`Failed to update entry: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      alert(`Failed to update entry: ${getErrorMessage(err)}`)
     }
   }
 
@@ -128,7 +128,7 @@ export default function GoalDetail() {
                 label={{ value: goal.unit, angle: -90, position: 'insideLeft' }}
               />
               <Tooltip
-                formatter={(value: number) => [value, goal.unit]}
+                formatter={(value) => [value, goal.unit]}
                 labelFormatter={(label) => `Week: ${label}`}
               />
               <ReferenceLine

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Goal } from '../types'
-import { useAppData } from '../hooks/useAppData'
+import { useAppData } from '../context/AppDataContext'
+import { getErrorMessage } from '../utils/errors'
 import './CreateGoalModal.css'
 
 interface CreateGoalModalProps {
@@ -10,7 +11,7 @@ interface CreateGoalModalProps {
 }
 
 export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModalProps) {
-  const { data, addGoal, updateGoal, updateCategories } = useAppData()
+  const { data, mutate } = useAppData()
   const categories = data?.categories ?? []
   const isEdit = !!goal
 
@@ -81,20 +82,32 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
 
     setSubmitting(true)
     try {
+      if (!data) throw new Error('Data not loaded')
+
       const finalCategory = useNewCategory ? newCategory.trim() : category
       const start = parseFloat(startValue)
       const target = parseFloat(targetValue)
 
+      // Compute updated categories
+      const updatedCategories = useNewCategory && newCategory.trim() && !categories.includes(newCategory.trim())
+        ? [...categories, newCategory.trim()]
+        : categories
+
+      // Compute updated goals
+      let updatedGoals
       if (isEdit && goal) {
-        // Update existing goal
-        await updateGoal(goal.id, {
-          name: name.trim(),
-          category: finalCategory,
-          unit: unit.trim(),
-          targetValue: target,
-        })
+        updatedGoals = data.goals.map(g =>
+          g.id === goal.id
+            ? {
+                ...g,
+                name: name.trim(),
+                category: finalCategory,
+                unit: unit.trim(),
+                targetValue: target,
+              }
+            : g
+        )
       } else {
-        // Create new goal
         const newGoal: Goal = {
           id: crypto.randomUUID(),
           name: name.trim(),
@@ -105,17 +118,19 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
           createdAt: new Date().toISOString(),
           entries: [],
         }
-        await addGoal(newGoal)
+        updatedGoals = [...data.goals, newGoal]
       }
 
-      // If a new category was added, ensure it's in the master list
-      if (useNewCategory && newCategory.trim() && !categories.includes(newCategory.trim())) {
-        await updateCategories([...categories, newCategory.trim()])
-      }
+      // Single atomic mutation
+      await mutate({
+        ...data,
+        goals: updatedGoals,
+        categories: updatedCategories,
+      })
 
       onClose()
     } catch (err) {
-      alert(`Failed to save goal: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      alert(`Failed to save goal: ${getErrorMessage(err)}`)
     } finally {
       setSubmitting(false)
     }

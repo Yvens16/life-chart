@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { AppData, Goal, Entry } from '../types'
 import { fetchData, saveData } from '../api'
+import { getErrorMessage } from '../utils/errors'
 
 export function useAppData() {
   const [data, setData] = useState<AppData | null>(null)
@@ -20,7 +21,7 @@ export function useAppData() {
         }
       } catch (err) {
         if (mounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load data')
+          setError(getErrorMessage(err))
         }
       } finally {
         if (mounted) {
@@ -43,7 +44,7 @@ export function useAppData() {
       setData(newData)
       setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save data')
+      setError(getErrorMessage(err))
       throw err
     }
   }
@@ -122,7 +123,7 @@ export function useAppData() {
       setData(result)
       setError(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data')
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

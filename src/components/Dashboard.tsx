@@ -1,7 +1,7 @@
 // src/components/Dashboard.tsx
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useAppData } from '../hooks/useAppData'
+import { useAppData } from '../context/AppDataContext'
 import { calculateProgress } from '../utils/progress'
 import GoalCard from './GoalCard'
 import EmptyState from './EmptyState'

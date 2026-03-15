@@ -145,5 +145,10 @@
       ]
     }
   ],
-  "categories": ["Health", "Finance", "Personal Growth", "Fitness"]
+  "categories": [
+    "Health",
+    "Finance",
+    "Personal Growth",
+    "Fitness"
+  ]
 }

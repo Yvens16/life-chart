@@ -58,7 +58,7 @@ function apiPlugin(): Plugin {
             const data = await readDataFile()
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify(data))
-          } catch (_err) {
+          } catch (_err) { // eslint-disable-line @typescript-eslint/no-unused-vars
             res.statusCode = 500
             res.end(JSON.stringify({ error: 'Failed to read data' }))
           }
@@ -68,10 +68,13 @@ function apiPlugin(): Plugin {
         if (req.method === 'POST') {
           const MAX_BODY = 1024 * 1024 // 1 MB
           let body = ''
+          let tooLarge = false
 
           req.on('data', (chunk: Buffer) => {
+            if (tooLarge) return
             body += chunk.toString()
             if (body.length > MAX_BODY) {
+              tooLarge = true
               res.statusCode = 413
               res.end(JSON.stringify({ error: 'Payload too large' }))
               req.destroy()
@@ -79,6 +82,7 @@ function apiPlugin(): Plugin {
           })
 
           req.on('end', async () => {
+            if (tooLarge) return
             try {
               const parsed: unknown = JSON.parse(body)
               if (!isValidAppData(parsed)) {
@@ -89,7 +93,7 @@ function apiPlugin(): Plugin {
               await writeDataFile(parsed)
               res.setHeader('Content-Type', 'application/json')
               res.end(JSON.stringify({ ok: true }))
-            } catch (_err) {
+            } catch (_err) { // eslint-disable-line @typescript-eslint/no-unused-vars
               res.statusCode = 400
               res.end(JSON.stringify({ error: 'Invalid JSON or write failed' }))
             }
