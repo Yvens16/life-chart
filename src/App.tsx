@@ -1,9 +1,14 @@
+import { useState } from 'react'
 import { Routes, Route } from 'react-router'
 import './App.css'
 import Dashboard from './components/Dashboard'
 import GoalDetail from './components/GoalDetail'
+import QuickAddModal from './components/QuickAddModal'
+import './components/QuickAddModal.css'
 
 function App() {
+  const [quickAddOpen, setQuickAddOpen] = useState(false)
+
   return (
     <div className="app">
       <header className="app-header">
@@ -19,6 +24,20 @@ function App() {
       <footer className="app-footer">
         <p>Local-first goal tracking • Data stays on your device</p>
       </footer>
+
+      {/* Floating Action Button */}
+      <button
+        className="fab"
+        onClick={() => setQuickAddOpen(true)}
+        aria-label="Add new entry"
+      >
+        +
+      </button>
+
+      <QuickAddModal
+        open={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+      />
     </div>
   )
 }
