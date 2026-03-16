@@ -21,7 +21,7 @@ function buildChartData(goal: Goal) {
     return [{ date: 'Start', value: goal.startValue }]
   }
   return [...goal.entries]
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .sort((a, b) => a.date < b.date ? -1 : 1)
     .map(entry => ({
       date: parseLocalDate(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       value: entry.value,

@@ -1,38 +1,49 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useMemo, useRef, useEffect } from 'react'
 
 interface Toast {
   id: number
   message: string
-  type: 'error' | 'success'
+  type: 'error'
 }
 
 interface ToastContextValue {
   showError: (message: string) => void
-  showSuccess: (message: string) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
 
-let nextId = 0
-
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
+  const nextId = useRef(0)
+  const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map())
 
-  const dismiss = useCallback((id: number) => {
+  function dismiss(id: number) {
+    clearTimeout(timers.current.get(id))
+    timers.current.delete(id)
     setToasts(prev => prev.filter(t => t.id !== id))
+  }
+
+  function showError(message: string) {
+    const id = ++nextId.current
+    setToasts(prev => [...prev, { id, message, type: 'error' }])
+    const timer = setTimeout(() => {
+      timers.current.delete(id)
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 5000)
+    timers.current.set(id, timer)
+  }
+
+  useEffect(() => {
+    return () => {
+      timers.current.forEach(clearTimeout)
+      timers.current.clear()
+    }
   }, [])
 
-  const addToast = useCallback((message: string, type: Toast['type']) => {
-    const id = ++nextId
-    setToasts(prev => [...prev, { id, message, type }])
-    setTimeout(() => dismiss(id), 5000)
-  }, [dismiss])
-
-  const showError = useCallback((message: string) => addToast(message, 'error'), [addToast])
-  const showSuccess = useCallback((message: string) => addToast(message, 'success'), [addToast])
+  const contextValue = useMemo(() => ({ showError }), [showError])
 
   return (
-    <ToastContext value={{ showError, showSuccess }}>
+    <ToastContext value={contextValue}>
       {children}
       {toasts.length > 0 && (
         <div className="toast-container" aria-live="polite">

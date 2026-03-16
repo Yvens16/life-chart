@@ -10,6 +10,8 @@ interface QuickAddModalProps {
   onClose: () => void
 }
 
+const SEARCHABLE_THRESHOLD = 10
+
 export default function QuickAddModal({ open, onClose }: QuickAddModalProps) {
   const { data, addEntry } = useAppData()
   const { showError } = useToast()
@@ -19,6 +21,7 @@ export default function QuickAddModal({ open, onClose }: QuickAddModalProps) {
   const [value, setValue] = useState('')
   const [date, setDate] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [showList, setShowList] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
 
@@ -48,7 +51,7 @@ export default function QuickAddModal({ open, onClose }: QuickAddModalProps) {
       newErrors.goal = 'Please select a goal'
     }
 
-    const numValue = parseFloat(value)
+    const numValue = Number(value.trim())
     if (value.trim() === '') {
       newErrors.value = 'Value is required'
     } else if (isNaN(numValue)) {
@@ -87,7 +90,7 @@ export default function QuickAddModal({ open, onClose }: QuickAddModalProps) {
       const newEntry: Entry = {
         id: crypto.randomUUID(),
         date,
-        value: parseFloat(value),
+        value: Number(value.trim()),
       }
 
       await addEntry(selectedGoalId, newEntry)
@@ -128,30 +131,35 @@ export default function QuickAddModal({ open, onClose }: QuickAddModalProps) {
         <form onSubmit={handleSubmit}>
           <div className="form-field">
             <label htmlFor="goal-select">Goal *</label>
-            {goals.length >= 10 ? (
+            {goals.length >= SEARCHABLE_THRESHOLD ? (
               <div className="searchable-dropdown">
                 <input
                   type="text"
                   placeholder="Search goals by name or category..."
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={e => { setSearchQuery(e.target.value); setShowList(true) }}
+                  onFocus={() => setShowList(true)}
+                  onBlur={() => setTimeout(() => setShowList(false), 150)}
                   disabled={submitting}
                 />
-                <ul>
-                  {filteredGoals.map(goal => (
-                    <li
-                      key={goal.id}
-                      onClick={() => {
-                        setSelectedGoalId(goal.id)
-                        setSearchQuery('')
-                      }}
-                      className={selectedGoalId === goal.id ? 'selected' : ''}
-                    >
-                      {goal.name} ({goal.category}) — Current: {goal.entries.length > 0 ? goal.entries[goal.entries.length - 1].value : goal.startValue} {goal.unit}
-                    </li>
-                  ))}
-                </ul>
-                {filteredGoals.length === 0 && (
+                {showList && filteredGoals.length > 0 && (
+                  <ul>
+                    {filteredGoals.map(goal => (
+                      <li
+                        key={goal.id}
+                        onClick={() => {
+                          setSelectedGoalId(goal.id)
+                          setSearchQuery(goal.name)
+                          setShowList(false)
+                        }}
+                        className={selectedGoalId === goal.id ? 'selected' : ''}
+                      >
+                        {goal.name} ({goal.category}) — Current: {goal.entries.length > 0 ? goal.entries[goal.entries.length - 1].value : goal.startValue} {goal.unit}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {showList && filteredGoals.length === 0 && (
                   <div className="dropdown-empty">No goals match your search</div>
                 )}
               </div>

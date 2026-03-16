@@ -41,8 +41,8 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="dashboard-loading">
-        <div className="spinner" />
+      <div className="dashboard-loading" role="status" aria-busy="true">
+        <div className="spinner" aria-hidden="true" />
         <span>Loading your goals...</span>
       </div>
     )

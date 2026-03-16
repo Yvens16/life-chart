@@ -36,8 +36,8 @@ export default function GoalDetail() {
 
   if (loading) {
     return (
-      <div className="goal-detail-loading">
-        <div className="spinner" />
+      <div className="goal-detail-loading" role="status" aria-busy="true">
+        <div className="spinner" aria-hidden="true" />
         <span>Loading goal details...</span>
       </div>
     )

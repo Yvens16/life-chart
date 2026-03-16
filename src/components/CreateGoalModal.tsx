@@ -65,11 +65,11 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
     if (!unit.trim()) newErrors.unit = 'Unit is required'
     else if (unit.length > 20) newErrors.unit = 'Unit must be 20 characters or less'
 
-    const start = parseFloat(startValue)
+    const start = Number(startValue.trim())
     if (isNaN(start)) newErrors.startValue = 'Start value must be a number'
     else if (!Number.isFinite(start)) newErrors.startValue = 'Start value must be finite'
 
-    const target = parseFloat(targetValue)
+    const target = Number(targetValue.trim())
     if (isNaN(target)) newErrors.targetValue = 'Target value must be a number'
     else if (!Number.isFinite(target)) newErrors.targetValue = 'Target value must be finite'
     else if (target === start) newErrors.targetValue = 'Target value must be different from start value'
@@ -87,8 +87,8 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
       if (!data) throw new Error('Data not loaded')
 
       const finalCategory = useNewCategory ? newCategory.trim() : category
-      const start = parseFloat(startValue)
-      const target = parseFloat(targetValue)
+      const start = Number(startValue.trim())
+      const target = Number(targetValue.trim())
 
       // Compute updated categories
       const updatedCategories = useNewCategory && newCategory.trim() && !categories.includes(newCategory.trim())

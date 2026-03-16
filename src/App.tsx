@@ -4,7 +4,6 @@ import './App.css'
 import Dashboard from './components/Dashboard'
 import GoalDetail from './components/GoalDetail'
 import QuickAddModal from './components/QuickAddModal'
-import './components/QuickAddModal.css'
 
 function App() {
   const [quickAddOpen, setQuickAddOpen] = useState(false)
