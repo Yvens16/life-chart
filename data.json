@@ -4,9 +4,9 @@
       "id": "goal-1",
       "name": "Weight Loss",
       "category": "Health",
-      "unit": "lbs",
+      "unit": "kg",
       "startValue": 180,
-      "targetValue": 160,
+      "targetValue": 86,
       "createdAt": "2026-01-01T00:00:00.000Z",
       "entries": [
         {
