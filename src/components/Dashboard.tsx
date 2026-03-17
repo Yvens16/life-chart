@@ -14,30 +14,18 @@ export default function Dashboard() {
   const { data, loading, error, deleteGoal } = useAppData()
   const { showError } = useToast()
   const navigate = useNavigate()
-  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
 
-  // Group goals by category — memoized on data so re-renders from modal
-  // open/close don't recompute the O(categories × goals) grouping.
-  const goalsByCategory = useMemo(() => {
-    const gs = data?.goals ?? []
-    const cats = data?.categories ?? []
-    const result: Record<string, typeof gs> = {}
-    gs.forEach(goal => {
-      if (!result[goal.category]) result[goal.category] = []
-      result[goal.category]!.push(goal)
-    })
-    // Ensure all categories appear even if empty
-    cats.forEach(cat => {
-      if (!result[cat]) result[cat] = []
-    })
-    return result
-  }, [data])
-
   const goals = data?.goals ?? []
   const categories = data?.categories ?? []
+
+  const filteredGoals = useMemo(() => {
+    if (!activeCategory) return goals
+    return goals.filter(g => g.category === activeCategory)
+  }, [goals, activeCategory])
 
   if (loading) {
     return (
@@ -55,18 +43,6 @@ export default function Dashboard() {
         <button onClick={() => window.location.reload()}>Retry</button>
       </div>
     )
-  }
-
-  const toggleCategory = (category: string) => {
-    setCollapsedCategories(prev => {
-      const next = new Set(prev)
-      if (next.has(category)) {
-        next.delete(category)
-      } else {
-        next.add(category)
-      }
-      return next
-    })
   }
 
   const handleDeleteGoal = async (goalId: string) => {
@@ -94,6 +70,10 @@ export default function Dashboard() {
     setEditingGoal(null)
   }
 
+  const handleFilterClick = (category: string | null) => {
+    setActiveCategory(prev => (prev === category ? null : category))
+  }
+
   // Empty state: no goals at all
   if (goals.length === 0) {
     return (
@@ -115,48 +95,41 @@ export default function Dashboard() {
         </button>
       </header>
 
-      <div className="dashboard-categories">
-        {categories.map(category => {
-          const categoryGoals = goalsByCategory[category] || []
-          const isCollapsed = collapsedCategories.has(category)
+      {categories.length > 0 && (
+        <div className="dashboard-filter-bar" role="toolbar" aria-label="Filter by category">
+          <button
+            className={`filter-pill${activeCategory === null ? ' filter-pill--active' : ''}`}
+            aria-pressed={activeCategory === null}
+            onClick={() => handleFilterClick(null)}
+          >
+            All
+          </button>
+          {categories.map(category => (
+            <button
+              key={category}
+              className={`filter-pill${activeCategory === category ? ' filter-pill--active' : ''}`}
+              aria-pressed={activeCategory === category}
+              onClick={() => handleFilterClick(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      )}
 
-          return (
-            <section key={category} className="dashboard-category">
-              <header className="category-header" onClick={() => toggleCategory(category)}>
-                <h2 className="category-title">{category}</h2>
-                <span className="category-count">{categoryGoals.length} goal{categoryGoals.length !== 1 ? 's' : ''}</span>
-                <span className="category-toggle">{isCollapsed ? '▶' : '▼'}</span>
-              </header>
-
-              {!isCollapsed && (
-                <div className="category-goals">
-                  {categoryGoals.length > 0 ? (
-                    <div className="goal-card-grid">
-                      {categoryGoals.map(goal => (
-                        <GoalCard
-                          key={goal.id}
-                          goal={goal}
-                          progress={calculateProgress(goal)}
-                          onClick={() => navigate(`/goal/${goal.id}`)}
-                          onEdit={() => handleEditGoal(goal)}
-                          onDelete={() => handleDeleteGoal(goal.id)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="category-empty">
-                      <p>No goals in this category yet.</p>
-                      <button onClick={handleCreateGoalClick}>
-                        Add a goal to {category}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-          )
-        })}
+      <div className="goal-card-grid">
+        {filteredGoals.map(goal => (
+          <GoalCard
+            key={goal.id}
+            goal={goal}
+            progress={calculateProgress(goal)}
+            onClick={() => navigate(`/goal/${goal.id}`)}
+            onEdit={() => handleEditGoal(goal)}
+            onDelete={() => handleDeleteGoal(goal.id)}
+          />
+        ))}
       </div>
+
       {createModalOpen && (
         <CreateGoalModal open onClose={() => setCreateModalOpen(false)} />
       )}
