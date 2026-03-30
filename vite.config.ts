@@ -5,6 +5,10 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import type { AppData } from './src/types'
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import tailwindcss from '@tailwindcss/vite'
+
+
+
 
 function apiPlugin(): Plugin {
   const dataFilePath = path.resolve(__dirname, 'data.json')
@@ -172,8 +176,10 @@ function apiPlugin(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    tailwindcss(),
     react(),
     babel({ presets: [reactCompilerPreset()] }),
     apiPlugin(),
   ],
 })
+
