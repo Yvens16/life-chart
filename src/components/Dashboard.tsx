@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 export default function Dashboard() {
-  const { data, loading, error, deleteGoal } = useAppData()
+  const { data, loading, error, deleteGoal, activeYear, currentYear, carryForwardGoal } = useAppData()
   const { showError } = useToast()
   const navigate = useNavigate()
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
@@ -21,8 +21,10 @@ export default function Dashboard() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
 
-  const goals = data?.goals ?? []
+  const isCurrentYear = activeYear === currentYear
   const categories = data?.categories ?? []
+
+  const goals = (data?.goals ?? []).filter(g => g.year === activeYear)
 
   const filteredGoals = useMemo(() => {
     if (!activeCategory) return goals
@@ -87,6 +89,16 @@ export default function Dashboard() {
     setEditingGoal(null)
   }
 
+  const handleCopyForward = async (goal: Goal) => {
+    try {
+      await carryForwardGoal(goal, goal.targetValue)
+    } catch (err) {
+      showError(
+        `Failed to copy goal: ${err instanceof Error ? err.message : 'Unknown error'}`
+      )
+    }
+  }
+
   const onFilterChange = (value: string) => {
     if (value === '' || value === '__all__') {
       setActiveCategory(null)
@@ -97,11 +109,20 @@ export default function Dashboard() {
 
   if (goals.length === 0) {
     return (
-      <EmptyState
-        message="You haven't created any goals yet."
-        ctaLabel="Create your first goal"
-        onCtaClick={handleCreateGoalClick}
-      />
+      <>
+        <EmptyState
+          message={
+            isCurrentYear
+              ? "You haven't created any goals yet."
+              : `No goals for ${activeYear}.`
+          }
+          ctaLabel={isCurrentYear ? 'Create your first goal' : undefined}
+          onCtaClick={isCurrentYear ? handleCreateGoalClick : undefined}
+        />
+        {isCurrentYear && (
+          <CreateGoalModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} year={activeYear} />
+        )}
+      </>
     )
   }
 
@@ -113,12 +134,16 @@ export default function Dashboard() {
             Goal Progress Dashboard
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Track your progress across {goals.length} goal{goals.length !== 1 ? 's' : ''}
+            {isCurrentYear
+              ? `Track your progress across ${goals.length} goal${goals.length !== 1 ? 's' : ''}`
+              : `${activeYear} — ${goals.length} goal${goals.length !== 1 ? 's' : ''} (read-only)`}
           </p>
         </div>
-        <Button type="button" onClick={handleCreateGoalClick}>
-          + Create Goal
-        </Button>
+        {isCurrentYear && (
+          <Button type="button" onClick={handleCreateGoalClick}>
+            + Create Goal
+          </Button>
+        )}
       </div>
 
       {categories.length > 0 && (
@@ -150,18 +175,24 @@ export default function Dashboard() {
             goal={goal}
             progress={calculateProgress(goal)}
             onClick={() => navigate(`/goal/${goal.id}`)}
-            onEdit={() => handleEditGoal(goal)}
-            onDelete={() => handleDeleteGoal(goal.id)}
+            onEdit={isCurrentYear ? () => handleEditGoal(goal) : undefined}
+            onDelete={isCurrentYear ? () => handleDeleteGoal(goal.id) : undefined}
+            onCopyForward={!isCurrentYear ? () => handleCopyForward(goal) : undefined}
+            currentYear={currentYear}
           />
         ))}
       </div>
 
-      <CreateGoalModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
-      <CreateGoalModal
-        open={editModalOpen && editingGoal !== null}
-        onClose={handleCloseEditModal}
-        goal={editingGoal ?? undefined}
-      />
+      {isCurrentYear && (
+        <>
+          <CreateGoalModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} year={activeYear} />
+          <CreateGoalModal
+            open={editModalOpen && editingGoal !== null}
+            onClose={handleCloseEditModal}
+            goal={editingGoal ?? undefined}
+          />
+        </>
+      )}
     </div>
   )
 }

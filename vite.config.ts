@@ -38,6 +38,9 @@ function apiPlugin(): Plugin {
       typeof goal.targetValue === 'number' &&
       Number.isFinite(goal.targetValue) &&
       typeof goal.createdAt === 'string' &&
+      typeof goal.year === 'number' &&
+      Number.isInteger(goal.year) &&
+      (goal.linkedGoalId === undefined || typeof goal.linkedGoalId === 'string') &&
       Array.isArray(goal.entries) &&
       (goal.entries as unknown[]).every(isValidEntry)
     )
@@ -50,19 +53,51 @@ function apiPlugin(): Plugin {
       Array.isArray(d.goals) &&
       (d.goals as unknown[]).every(isValidGoal) &&
       Array.isArray(d.categories) &&
-      (d.categories as unknown[]).every(c => typeof c === 'string')
+      (d.categories as unknown[]).every(c => typeof c === 'string') &&
+      (d.promptShownForYear === undefined ||
+        (typeof d.promptShownForYear === 'number' && Number.isInteger(d.promptShownForYear)))
     )
+  }
+
+  /** Backfill `year` from `createdAt` for any goal missing it. Returns migrated data + a flag. */
+  function migrateData(parsed: unknown): { data: unknown; migrated: boolean } {
+    if (typeof parsed !== 'object' || parsed === null) return { data: parsed, migrated: false }
+    const d = parsed as Record<string, unknown>
+    if (!Array.isArray(d.goals)) return { data: parsed, migrated: false }
+
+    let migrated = false
+    const goals = (d.goals as unknown[]).map((g: unknown) => {
+      if (typeof g !== 'object' || g === null) return g
+      const goal = g as Record<string, unknown>
+      if (typeof goal.year === 'number') return g
+      migrated = true
+      const createdAt = typeof goal.createdAt === 'string' ? goal.createdAt : new Date().toISOString()
+      return { ...goal, year: new Date(createdAt).getFullYear() }
+    })
+
+    return { data: { ...d, goals }, migrated }
   }
 
   async function readDataFile(): Promise<AppData> {
     try {
       const content = await fs.readFile(dataFilePath, 'utf-8')
-      const parsed: unknown = JSON.parse(content)
-      if (!isValidAppData(parsed)) {
+      const raw: unknown = JSON.parse(content)
+
+      // Migrate legacy data (add `year` from `createdAt` for goals that don't have it)
+      const { data: migrated, migrated: didMigrate } = migrateData(raw)
+
+      if (!isValidAppData(migrated)) {
         console.warn('[life-chart] data.json failed schema validation — starting with empty state')
         return { goals: [], categories: [] }
       }
-      return parsed
+
+      if (didMigrate) {
+        // Persist the migration so we don't re-run it on every read
+        await writeDataFile(migrated)
+        console.info('[life-chart] Migrated data.json: backfilled `year` field on existing goals')
+      }
+
+      return migrated
     } catch (err) {
       const nodeErr = err as NodeJS.ErrnoException
       if (nodeErr.code === 'ENOENT') {

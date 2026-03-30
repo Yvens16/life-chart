@@ -27,9 +27,10 @@ interface CreateGoalModalProps {
   open: boolean
   onClose: () => void
   goal?: Goal
+  year?: number
 }
 
-export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModalProps) {
+export default function CreateGoalModal({ open, onClose, goal, year }: CreateGoalModalProps) {
   const { data, mutate } = useAppData()
   const { showError } = useToast()
   const categories = data?.categories ?? []
@@ -132,6 +133,7 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
           startValue: start,
           targetValue: target,
           createdAt: new Date().toISOString(),
+          year: year ?? new Date().getFullYear(),
           entries: [],
         }
         updatedGoals = [...data.goals, newGoal]

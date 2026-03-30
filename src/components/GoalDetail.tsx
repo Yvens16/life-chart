@@ -15,6 +15,7 @@ import { useToast } from '../context/ToastContext'
 import { calculateProgress, isGoalProgressing } from '../utils/progress'
 import { groupEntriesByWeek, formatWeekLabel } from '../utils/weekAggregation'
 import { getErrorMessage } from '../utils/errors'
+import { buildGoalChain, getFinalEntryValue, computeProgressPercent } from '../utils/goalChain'
 import CreateGoalModal from './CreateGoalModal'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,8 +40,9 @@ const STROKE_OFF = 'var(--chart-2)'
 export default function GoalDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data, loading, error, deleteEntry, updateEntry, deleteGoal } = useAppData()
+  const { data, loading, error, deleteEntry, updateEntry, deleteGoal, activeYear, currentYear } = useAppData()
   const { showError } = useToast()
+  const isCurrentYear = activeYear === currentYear
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [editDate, setEditDate] = useState('')
@@ -80,6 +82,10 @@ export default function GoalDetail() {
   const progress = calculateProgress(goal)
   const progressing = isGoalProgressing(goal)
   const strokeColor = progressing ? STROKE_ON : STROKE_OFF
+
+  const allGoals = data?.goals ?? []
+  const goalChain = buildGoalChain(goal, allGoals)
+  const showHistory = goalChain.length > 1
 
   const weeklyData = groupEntriesByWeek(goal.entries)
   const chartData =
@@ -188,14 +194,16 @@ export default function GoalDetail() {
               <span className="text-sm text-muted-foreground">{goal.unit}</span>
             </div>
           </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => setEditModalOpen(true)}>
-              Edit
-            </Button>
-            <Button type="button" variant="destructive" size="sm" onClick={handleDeleteGoal}>
-              Delete
-            </Button>
-          </div>
+          {isCurrentYear && (
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setEditModalOpen(true)}>
+                Edit
+              </Button>
+              <Button type="button" variant="destructive" size="sm" onClick={handleDeleteGoal}>
+                Delete
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -252,7 +260,9 @@ export default function GoalDetail() {
       <Card>
         <CardHeader>
           <CardTitle>Entries</CardTitle>
-          <CardDescription>Newest first — edit or remove logged values</CardDescription>
+          <CardDescription>
+            {isCurrentYear ? 'Newest first — edit or remove logged values' : 'Newest first — read-only view'}
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-0 px-0 pb-0">
           {sortedEntries.length === 0 ? (
@@ -263,7 +273,7 @@ export default function GoalDetail() {
             <ul className="flex flex-col divide-y divide-border">
               {sortedEntries.map(entry => (
                 <li key={entry.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  {editingEntryId === entry.id ? (
+                  {isCurrentYear && editingEntryId === entry.id ? (
                     <div className="flex w-full flex-col gap-3">
                       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                         <Input
@@ -305,24 +315,26 @@ export default function GoalDetail() {
                           {entry.value} {goal.unit}
                         </span>
                       </div>
-                      <div className="flex shrink-0 gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startEditEntry(entry.id)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteEntry(entry.id)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
+                      {isCurrentYear && (
+                        <div className="flex shrink-0 gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startEditEntry(entry.id)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteEntry(entry.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      )}
                     </>
                   )}
                 </li>
@@ -332,11 +344,67 @@ export default function GoalDetail() {
         </CardContent>
       </Card>
 
-      <CreateGoalModal
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        goal={goal}
-      />
+      {showHistory && (
+        <Card>
+          <CardHeader>
+            <CardTitle>History across years</CardTitle>
+            <CardDescription>Progress on this goal over multiple years</CardDescription>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Year</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground">Target</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground">Final value</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground">Progress</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {goalChain.map(chainGoal => {
+                  const finalValue = getFinalEntryValue(chainGoal)
+                  const pct = finalValue !== null ? computeProgressPercent(chainGoal, finalValue) : null
+                  const isActive = chainGoal.id === goal.id
+                  return (
+                    <tr
+                      key={chainGoal.id}
+                      className={isActive ? 'bg-muted/30' : undefined}
+                    >
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        {chainGoal.year}
+                        {isActive && (
+                          <span className="ml-2 text-xs text-muted-foreground">(current)</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-muted-foreground">
+                        {chainGoal.targetValue} {chainGoal.unit}
+                      </td>
+                      <td className="px-4 py-3 text-right text-muted-foreground">
+                        {finalValue !== null ? `${finalValue} ${chainGoal.unit}` : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {pct !== null ? (
+                          <span className={pct >= 100 ? 'text-primary font-medium' : 'text-muted-foreground'}>
+                            {pct.toFixed(0)}%
+                          </span>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+
+      {isCurrentYear && (
+        <CreateGoalModal
+          open={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          goal={goal}
+        />
+      )}
     </div>
   )
 }

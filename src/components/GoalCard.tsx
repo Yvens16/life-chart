@@ -18,6 +18,8 @@ interface GoalCardProps {
   onClick: () => void
   onEdit?: () => void
   onDelete?: () => void
+  onCopyForward?: () => void
+  currentYear?: number
 }
 
 /** Parse a YYYY-MM-DD string as local midnight (not UTC midnight). */
@@ -61,6 +63,8 @@ export default function GoalCard({
   onClick,
   onEdit,
   onDelete,
+  onCopyForward,
+  currentYear,
 }: GoalCardProps) {
   const progressing = isGoalProgressing(goal)
   const strokeColor = progressing ? STROKE_ON : STROKE_OFF
@@ -75,6 +79,11 @@ export default function GoalCard({
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     onDelete?.()
+  }
+
+  const handleCopyForwardClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onCopyForward?.()
   }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -123,6 +132,19 @@ export default function GoalCard({
                   Delete
                 </Button>
               )}
+            </div>
+          )}
+          {onCopyForward && (
+            <div onClick={e => e.stopPropagation()}>
+              <Button
+                type="button"
+                variant="outline"
+                size="xs"
+                onClick={handleCopyForwardClick}
+                aria-label={`Copy goal to ${currentYear ?? 'current year'}`}
+              >
+                Copy to {currentYear ?? 'current year'}
+              </Button>
             </div>
           )}
         </CardAction>
