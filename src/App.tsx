@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router'
 import Dashboard from './components/Dashboard'
-import GoalDetail from './components/GoalDetail'
 import QuickAddModal from './components/QuickAddModal'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+
+const GoalDetail = lazy(() => import('./components/GoalDetail'))
 
 function App() {
   const [quickAddOpen, setQuickAddOpen] = useState(false)
@@ -21,7 +23,21 @@ function App() {
       <main className="mx-auto box-border w-full max-w-6xl flex-1 px-6 py-8">
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/goal/:id" element={<GoalDetail />} />
+          <Route
+            path="/goal/:id"
+            element={
+              <Suspense
+                fallback={
+                  <div className="flex flex-col gap-4 py-20" role="status" aria-busy="true">
+                    <Skeleton className="h-8 w-48" />
+                    <Skeleton className="h-[400px] w-full rounded-lg" />
+                  </div>
+                }
+              >
+                <GoalDetail />
+              </Suspense>
+            }
+          />
         </Routes>
       </main>
       <footer className="border-t border-border bg-card px-6 py-6 text-center">
