@@ -1,7 +1,7 @@
-/* Toast notifications */
+/* Toast notifications — semantic tokens for dark UI */
 .toast-container {
   position: fixed;
-  bottom: 5rem; /* above the FAB */
+  bottom: 5rem;
   right: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -16,37 +16,20 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.875rem 1rem;
-  border-radius: 0.75rem;
-  box-shadow: var(--shadow);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 10px 40px oklch(0 0 0 / 45%);
   animation: toastIn 0.25s ease-out;
   font-size: 0.9375rem;
   line-height: 1.4;
 }
 
 .toast--error {
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
-}
-
-.toast--success {
-  background-color: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #166534;
-}
-
-@media (prefers-color-scheme: dark) {
-  .toast--error {
-    background-color: #2d1515;
-    border-color: #7f1d1d;
-    color: #fca5a5;
-  }
-
-  .toast--success {
-    background-color: #052e16;
-    border-color: #14532d;
-    color: #86efac;
-  }
+  border-color: color-mix(in oklch, var(--destructive) 45%, transparent);
+  background-color: color-mix(in oklch, var(--destructive) 12%, var(--card));
+  color: var(--foreground);
 }
 
 .toast-message {
@@ -60,13 +43,12 @@
   line-height: 1;
   cursor: pointer;
   padding: 0;
-  color: inherit;
-  opacity: 0.6;
+  color: var(--muted-foreground);
   flex-shrink: 0;
 }
 
 .toast-dismiss:hover {
-  opacity: 1;
+  color: var(--foreground);
 }
 
 @keyframes toastIn {

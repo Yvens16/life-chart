@@ -1,14 +1,32 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { Goal } from '../types'
 import { useAppData } from '../context/AppDataContext'
 import { useToast } from '../context/ToastContext'
 import { getErrorMessage } from '../utils/errors'
-import './CreateGoalModal.css'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface CreateGoalModalProps {
   open: boolean
   onClose: () => void
-  goal?: Goal // if provided, edit mode
+  goal?: Goal
 }
 
 export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModalProps) {
@@ -27,8 +45,8 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
 
-  // Initialize form with goal data when in edit mode
   useEffect(() => {
+    if (!open) return
     if (goal) {
       setName(goal.name)
       setCategory(goal.category)
@@ -38,7 +56,6 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
       setStartValue(goal.startValue.toString())
       setTargetValue(goal.targetValue.toString())
     } else {
-      // Reset form for create mode
       setName('')
       setCategory('')
       setNewCategory('')
@@ -49,8 +66,6 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
     }
     setErrors({})
   }, [goal, open])
-
-  if (!open) return null
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {}
@@ -90,12 +105,11 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
       const start = Number(startValue.trim())
       const target = Number(targetValue.trim())
 
-      // Compute updated categories
-      const updatedCategories = useNewCategory && newCategory.trim() && !categories.includes(newCategory.trim())
-        ? [...categories, newCategory.trim()]
-        : categories
+      const updatedCategories =
+        useNewCategory && newCategory.trim() && !categories.includes(newCategory.trim())
+          ? [...categories, newCategory.trim()]
+          : categories
 
-      // Compute updated goals
       let updatedGoals
       if (isEdit && goal) {
         updatedGoals = data.goals.map(g =>
@@ -123,7 +137,6 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
         updatedGoals = [...data.goals, newGoal]
       }
 
-      // Single atomic mutation
       await mutate({
         ...data,
         goals: updatedGoals,
@@ -138,71 +151,94 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
     }
   }
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value
-    if (value === '__new__') {
-      setUseNewCategory(true)
-      setNewCategory('')
-    } else {
-      setUseNewCategory(false)
-      setCategory(value)
-    }
-  }
+  const categorySelectValue = useNewCategory ? '__new__' : category || undefined
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <header className="modal-header">
-          <h2>{isEdit ? 'Edit Goal' : 'Create New Goal'}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
-        </header>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen: boolean) => {
+        if (!nextOpen) onClose()
+      }}
+    >
+      <DialogContent className="max-h-[min(90vh,720px)] overflow-y-auto sm:max-w-md" showCloseButton>
+        <DialogHeader>
+          <DialogTitle>{isEdit ? 'Edit Goal' : 'Create New Goal'}</DialogTitle>
+          <DialogDescription>
+            {isEdit
+              ? 'Update your goal details below.'
+              : 'Define a goal and how you will measure progress.'}
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-field">
-            <label htmlFor="goal-name">Goal Name *</label>
-            <input
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="goal-name">Goal name *</Label>
+            <Input
               id="goal-name"
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="e.g., Weight Loss, Savings"
+              placeholder="e.g., Weight loss, savings"
               maxLength={100}
               disabled={submitting}
+              aria-invalid={!!errors.name}
             />
-            {errors.name && <div className="field-error">{errors.name}</div>}
+            {errors.name && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.name}
+              </p>
+            )}
           </div>
 
-          <div className="form-field">
-            <label htmlFor="goal-category">Category *</label>
-            <select
-              id="goal-category"
-              value={useNewCategory ? '__new__' : category}
-              onChange={handleCategoryChange}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="goal-category">Category *</Label>
+            <Select
+              value={categorySelectValue}
+              onValueChange={v => {
+                if (v === '__new__') {
+                  setUseNewCategory(true)
+                  setNewCategory('')
+                } else {
+                  setUseNewCategory(false)
+                  setCategory(v)
+                }
+              }}
               disabled={submitting}
             >
-              <option value="">Select a category</option>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-              <option value="__new__">+ New category</option>
-            </select>
+              <SelectTrigger id="goal-category" className="w-full">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {categories.map(cat => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__new__">+ New category</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
             {useNewCategory && (
-              <input
+              <Input
                 type="text"
                 value={newCategory}
                 onChange={e => setNewCategory(e.target.value)}
-                placeholder="Enter new category name"
+                placeholder="New category name"
                 maxLength={50}
                 disabled={submitting}
-                className="new-category-input"
               />
             )}
-            {errors.category && <div className="field-error">{errors.category}</div>}
+            {errors.category && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.category}
+              </p>
+            )}
           </div>
 
-          <div className="form-field">
-            <label htmlFor="goal-unit">Unit *</label>
-            <input
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="goal-unit">Unit *</Label>
+            <Input
               id="goal-unit"
               type="text"
               value={unit}
@@ -210,14 +246,19 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
               placeholder="e.g., lbs, $, books"
               maxLength={20}
               disabled={submitting}
+              aria-invalid={!!errors.unit}
             />
-            {errors.unit && <div className="field-error">{errors.unit}</div>}
+            {errors.unit && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.unit}
+              </p>
+            )}
           </div>
 
-          <div className="form-row">
-            <div className="form-field">
-              <label htmlFor="goal-start">Start Value *</label>
-              <input
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="goal-start">Start value *</Label>
+              <Input
                 id="goal-start"
                 type="number"
                 step="any"
@@ -225,12 +266,17 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
                 onChange={e => setStartValue(e.target.value)}
                 placeholder="0"
                 disabled={isEdit || submitting}
+                aria-invalid={!!errors.startValue}
               />
-              {errors.startValue && <div className="field-error">{errors.startValue}</div>}
+              {errors.startValue && (
+                <p className="text-xs text-destructive" role="alert">
+                  {errors.startValue}
+                </p>
+              )}
             </div>
-            <div className="form-field">
-              <label htmlFor="goal-target">Target Value *</label>
-              <input
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="goal-target">Target value *</Label>
+              <Input
                 id="goal-target"
                 type="number"
                 step="any"
@@ -238,21 +284,26 @@ export default function CreateGoalModal({ open, onClose, goal }: CreateGoalModal
                 onChange={e => setTargetValue(e.target.value)}
                 placeholder="100"
                 disabled={submitting}
+                aria-invalid={!!errors.targetValue}
               />
-              {errors.targetValue && <div className="field-error">{errors.targetValue}</div>}
+              {errors.targetValue && (
+                <p className="text-xs text-destructive" role="alert">
+                  {errors.targetValue}
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose} disabled={submitting}>
+          <DialogFooter className="gap-2 pt-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
               Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? 'Saving...' : (isEdit ? 'Save Changes' : 'Create Goal')}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Saving...' : isEdit ? 'Save changes' : 'Create goal'}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

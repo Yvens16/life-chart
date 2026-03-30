@@ -1,11 +1,20 @@
 import { LineChart, Line, YAxis, ReferenceLine, ResponsiveContainer } from 'recharts'
 import type { Goal } from '../types'
 import { isGoalProgressing } from '../utils/progress'
-import './GoalCard.css'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardAction,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 interface GoalCardProps {
   goal: Goal
-  progress: number // 0-100
+  progress: number
   onClick: () => void
   onEdit?: () => void
   onDelete?: () => void
@@ -21,17 +30,16 @@ function buildChartData(goal: Goal) {
     return [{ date: 'Start', value: goal.startValue }]
   }
   return [...goal.entries]
-    .sort((a, b) => a.date < b.date ? -1 : 1)
+    .sort((a, b) => (a.date < b.date ? -1 : 1))
     .map(entry => ({
-      date: parseLocalDate(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: parseLocalDate(entry.date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      }),
       value: entry.value,
     }))
 }
 
-/**
- * Compute a YAxis domain that covers all entry values, startValue, and targetValue
- * so the ReferenceLine for target is always visible within the chart area.
- */
 function buildYAxisDomain(goal: Goal): [number, number] {
   const allValues = [
     goal.startValue,
@@ -40,13 +48,22 @@ function buildYAxisDomain(goal: Goal): [number, number] {
   ]
   const min = Math.min(...allValues)
   const max = Math.max(...allValues)
-  const padding = (max - min) * 0.1 || 1 // at least 1 unit of padding
+  const padding = (max - min) * 0.1 || 1
   return [min - padding, max + padding]
 }
 
-export default function GoalCard({ goal, progress, onClick, onEdit, onDelete }: GoalCardProps) {
+const STROKE_ON = 'var(--chart-1)'
+const STROKE_OFF = 'var(--chart-2)'
+
+export default function GoalCard({
+  goal,
+  progress,
+  onClick,
+  onEdit,
+  onDelete,
+}: GoalCardProps) {
   const progressing = isGoalProgressing(goal)
-  const strokeColor = progressing ? '#10b981' : '#ef4444' // green-500, red-500
+  const strokeColor = progressing ? STROKE_ON : STROKE_OFF
   const chartData = buildChartData(goal)
   const yAxisDomain = buildYAxisDomain(goal)
 
@@ -60,57 +77,85 @@ export default function GoalCard({ goal, progress, onClick, onEdit, onDelete }: 
     onDelete?.()
   }
 
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onClick()
+    }
+  }
+
   return (
-    <div className="goal-card" onClick={onClick}>
-      <div className="goal-card-header">
-        <h3 className="goal-card-title">{goal.name}</h3>
-        <div className="goal-card-header-right">
-          <div className={`goal-card-progress${progress >= 100 ? ' goal-card-progress--complete' : ''}`}>
-            {progress >= 100 ? '✓ Done' : `${progress.toFixed(0)}%`}
-          </div>
+    <Card
+      role="button"
+      tabIndex={0}
+      className="cursor-pointer transition-colors hover:bg-muted/30"
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+    >
+      <CardHeader className="pb-2">
+        <CardTitle className="line-clamp-2 text-left leading-snug">{goal.name}</CardTitle>
+        <CardAction className="flex flex-col items-end gap-2">
+          <Badge variant={progress >= 100 ? 'default' : 'secondary'}>
+            {progress >= 100 ? 'Done' : `${progress.toFixed(0)}%`}
+          </Badge>
           {(onEdit || onDelete) && (
-            <div className="goal-card-actions" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-wrap justify-end gap-1" onClick={e => e.stopPropagation()}>
               {onEdit && (
-                <button className="goal-card-action-btn goal-card-edit-btn" onClick={handleEditClick} aria-label="Edit goal">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={handleEditClick}
+                  aria-label="Edit goal"
+                >
                   Edit
-                </button>
+                </Button>
               )}
               {onDelete && (
-                <button className="goal-card-action-btn goal-card-delete-btn" onClick={handleDeleteClick} aria-label="Delete goal">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  className="text-destructive hover:text-destructive"
+                  onClick={handleDeleteClick}
+                  aria-label="Delete goal"
+                >
                   Delete
-                </button>
+                </Button>
               )}
             </div>
           )}
+        </CardAction>
+      </CardHeader>
+
+      <CardContent className="pb-2">
+        <div className="h-20 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+              <YAxis domain={yAxisDomain} hide />
+              <ReferenceLine
+                y={goal.targetValue}
+                stroke={strokeColor}
+                strokeDasharray="3 3"
+                strokeWidth={1}
+              />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke={strokeColor}
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
-      </div>
+      </CardContent>
 
-      <div className="goal-card-chart">
-        <ResponsiveContainer width="100%" height={80}>
-          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-            <YAxis domain={yAxisDomain} hide />
-            <ReferenceLine
-              y={goal.targetValue}
-              stroke={strokeColor}
-              strokeDasharray="3 3"
-              strokeWidth={1}
-            />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke={strokeColor}
-              strokeWidth={2}
-              dot={false}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="goal-card-footer">
-        <span className="goal-card-unit">{goal.unit}</span>
-        <span className="goal-card-target">Target: {goal.targetValue}</span>
-      </div>
-    </div>
+      <CardFooter className="flex justify-between border-t border-border pt-4 text-muted-foreground">
+        <span className="truncate">{goal.unit}</span>
+        <span className="shrink-0">Target: {goal.targetValue}</span>
+      </CardFooter>
+    </Card>
   )
 }

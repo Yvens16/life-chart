@@ -181,5 +181,10 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
     apiPlugin(),
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
 })
 

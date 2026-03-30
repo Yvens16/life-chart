@@ -1,5 +1,5 @@
 // src/components/Dashboard.tsx
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useAppData } from '../context/AppDataContext'
 import { useToast } from '../context/ToastContext'
@@ -7,8 +7,10 @@ import { calculateProgress } from '../utils/progress'
 import type { Goal } from '../types'
 import GoalCard from './GoalCard'
 import EmptyState from './EmptyState'
-import './Dashboard.css'
 import CreateGoalModal from './CreateGoalModal'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 export default function Dashboard() {
   const { data, loading, error, deleteGoal } = useAppData()
@@ -27,30 +29,45 @@ export default function Dashboard() {
     return goals.filter(g => g.category === activeCategory)
   }, [goals, activeCategory])
 
+  const filterValue = activeCategory ?? '__all__'
+
   if (loading) {
     return (
-      <div className="dashboard-loading" role="status" aria-busy="true">
-        <div className="spinner" aria-hidden="true" />
-        <span>Loading your goals...</span>
+      <div
+        className="flex flex-col items-center justify-center gap-4 py-20"
+        role="status"
+        aria-busy="true"
+      >
+        <Skeleton className="size-10 rounded-full" />
+        <Skeleton className="h-4 w-48" />
+        <span className="text-sm text-muted-foreground">Loading your goals...</span>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="dashboard-error">
-        <p>Error loading data: {error}</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
+      <div className="flex flex-col items-center gap-4 rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-sm text-muted-foreground">Error loading data: {error}</p>
+        <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
       </div>
     )
   }
 
   const handleDeleteGoal = async (goalId: string) => {
-    if (window.confirm('Are you sure you want to delete this goal? This action cannot be undone.')) {
+    if (
+      window.confirm(
+        'Are you sure you want to delete this goal? This action cannot be undone.'
+      )
+    ) {
       try {
         await deleteGoal(goalId)
       } catch (err) {
-        showError(`Failed to delete goal: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        showError(
+          `Failed to delete goal: ${err instanceof Error ? err.message : 'Unknown error'}`
+        )
       }
     }
   }
@@ -70,11 +87,14 @@ export default function Dashboard() {
     setEditingGoal(null)
   }
 
-  const handleFilterClick = (category: string | null) => {
-    setActiveCategory(prev => (prev === category ? null : category))
+  const onFilterChange = (value: string) => {
+    if (value === '' || value === '__all__') {
+      setActiveCategory(null)
+      return
+    }
+    setActiveCategory(value)
   }
 
-  // Empty state: no goals at all
   if (goals.length === 0) {
     return (
       <EmptyState
@@ -86,38 +106,44 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard">
-      <header className="dashboard-header">
-        <h1>Goal Progress Dashboard</h1>
-        <p>Track your progress across {goals.length} goal{goals.length !== 1 ? 's' : ''}</p>
-        <button className="dashboard-create-goal-btn" onClick={handleCreateGoalClick}>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-heading text-xl font-semibold text-foreground">
+            Goal Progress Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Track your progress across {goals.length} goal{goals.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <Button type="button" onClick={handleCreateGoalClick}>
           + Create Goal
-        </button>
-      </header>
+        </Button>
+      </div>
 
       {categories.length > 0 && (
-        <div className="dashboard-filter-bar" role="toolbar" aria-label="Filter by category">
-          <button
-            className={`filter-pill${activeCategory === null ? ' filter-pill--active' : ''}`}
-            aria-pressed={activeCategory === null}
-            onClick={() => handleFilterClick(null)}
-          >
+        <ToggleGroup
+          type="single"
+          value={filterValue}
+          onValueChange={onFilterChange}
+          variant="outline"
+          size="sm"
+          spacing={0}
+          className="flex-wrap"
+          aria-label="Filter by category"
+        >
+          <ToggleGroupItem value="__all__" aria-label="All categories">
             All
-          </button>
+          </ToggleGroupItem>
           {categories.map(category => (
-            <button
-              key={category}
-              className={`filter-pill${activeCategory === category ? ' filter-pill--active' : ''}`}
-              aria-pressed={activeCategory === category}
-              onClick={() => handleFilterClick(category)}
-            >
+            <ToggleGroupItem key={category} value={category}>
               {category}
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       )}
 
-      <div className="goal-card-grid">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredGoals.map(goal => (
           <GoalCard
             key={goal.id}
@@ -130,12 +156,12 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {createModalOpen && (
-        <CreateGoalModal open onClose={() => setCreateModalOpen(false)} />
-      )}
-      {editModalOpen && editingGoal && (
-        <CreateGoalModal open onClose={handleCloseEditModal} goal={editingGoal} />
-      )}
+      <CreateGoalModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
+      <CreateGoalModal
+        open={editModalOpen && editingGoal !== null}
+        onClose={handleCloseEditModal}
+        goal={editingGoal ?? undefined}
+      />
     </div>
   )
 }
