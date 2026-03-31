@@ -1,7 +1,7 @@
 ---
 title: "feat: Goal Yearly Versioning"
 type: feat
-status: active
+status: completed
 date: 2026-03-30
 origin: docs/brainstorms/2026-03-30-goal-yearly-versioning-brainstorm.md
 ---
